@@ -1,35 +1,55 @@
 # Dependency directories
 node_modules/
-jspm_packages/
+.jspm_packages/
 
-# Production build folder for React
+# Build outputs
 /frontend/build/
+/dist/
+/build/
 
 # Environment variable files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*
+!.vscode/settings.json  # Exclude VSCode settings if you wish to keep them in source control
 
-# Debug logs
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
 
-# IDE and Editor folders
-.idea/
-.vscode/
-*.swp
-*.swo
-*.sublime-workspace
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Operating System files
 .DS_Store
 Thumbs.db
 
-# Optional npm cache directory
-.npm
+# IDE and Editor folders
+.idea/
+.vscode/
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
 
-# Optional eslint cache
-.eslintcache
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Test coverage
+/coverage/
+/.nyc_output
+
+# Temporary files
+.temp
+.tmp
+
+# Miscellaneous
+.pnp.js
