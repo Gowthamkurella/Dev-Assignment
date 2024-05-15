@@ -69,7 +69,7 @@ const Login: React.FC = () => {
 
       <style>
         {`
-                  @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+           @import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
 
           body {
             margin: 0;
