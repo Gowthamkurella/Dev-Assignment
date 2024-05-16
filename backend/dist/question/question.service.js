@@ -17,9 +17,11 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const question_schema_1 = require("./schemas/question.schema");
+const response_schema_1 = require("../question/schemas/response.schema");
 let QuestionService = class QuestionService {
-    constructor(questionModel) {
+    constructor(questionModel, responseModel) {
         this.questionModel = questionModel;
+        this.responseModel = responseModel;
     }
     async create(title) {
         const newQuestion = new this.questionModel({ title });
@@ -47,12 +49,15 @@ let QuestionService = class QuestionService {
         if (!result) {
             throw new common_1.NotFoundException(`Question with ID ${id} not found`);
         }
+        await this.responseModel.deleteMany({ questionId: id }).exec();
     }
 };
 exports.QuestionService = QuestionService;
 exports.QuestionService = QuestionService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(question_schema_1.Question.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model])
+    __param(1, (0, mongoose_1.InjectModel)(response_schema_1.Response.name)),
+    __metadata("design:paramtypes", [mongoose_2.Model,
+        mongoose_2.Model])
 ], QuestionService);
 //# sourceMappingURL=question.service.js.map

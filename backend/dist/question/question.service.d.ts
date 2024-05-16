@@ -24,9 +24,11 @@
 /// <reference types="mongoose/types/inferschematype" />
 import { Model } from 'mongoose';
 import { Question, QuestionDocument } from './schemas/question.schema';
+import { ResponseDocument } from '../question/schemas/response.schema';
 export declare class QuestionService {
     private questionModel;
-    constructor(questionModel: Model<QuestionDocument>);
+    private responseModel;
+    constructor(questionModel: Model<QuestionDocument>, responseModel: Model<ResponseDocument>);
     create(title: string): Promise<Question>;
     findAll(): Promise<Question[]>;
     findOne(id: string): Promise<Question>;

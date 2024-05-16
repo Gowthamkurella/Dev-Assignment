@@ -23,13 +23,21 @@ let RatingController = class RatingController {
     addRatings(rateQuestionsDto) {
         return this.ratingService.addRatings(rateQuestionsDto.rates);
     }
-    getQuestionsWithRatings() {
-        return this.ratingService.getQuestionsWithRatings();
+    async getQuestionsWithRatings(res) {
+        const questions = await this.ratingService.getQuestionsWithRatings();
+        if (questions.length === 0) {
+            return res.status(common_1.HttpStatus.NO_CONTENT).send();
+        }
+        return res.status(common_1.HttpStatus.OK).json(questions);
     }
-    getQuestionsWithRatingsByDate(start, end) {
+    async getQuestionsWithRatingsByDate(start, end, res) {
         const startDate = new Date(start);
         const endDate = new Date(end);
-        return this.ratingService.getQuestionsWithRatingsByDate(startDate, endDate);
+        const questions = await this.ratingService.getQuestionsWithRatingsByDate(startDate, endDate);
+        if (questions.length === 0) {
+            return res.status(common_1.HttpStatus.NO_CONTENT).send();
+        }
+        return res.status(common_1.HttpStatus.OK).json(questions);
     }
 };
 exports.RatingController = RatingController;
@@ -42,17 +50,19 @@ __decorate([
 ], RatingController.prototype, "addRatings", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
 ], RatingController.prototype, "getQuestionsWithRatings", null);
 __decorate([
     (0, common_1.Get)('date-range'),
     __param(0, (0, common_1.Query)('start')),
     __param(1, (0, common_1.Query)('end')),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
 ], RatingController.prototype, "getQuestionsWithRatingsByDate", null);
 exports.RatingController = RatingController = __decorate([
     (0, common_1.Controller)('ratings'),

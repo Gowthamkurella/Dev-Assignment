@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Param, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Param, Get, Query,Res, HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 import { RatingService } from './rating.service';
 import { RateQuestionsDto } from './dto/rate-questions.dto';
 
@@ -12,14 +13,22 @@ export class RatingController {
     }
 
     @Get()
-    getQuestionsWithRatings() {
-        return this.ratingService.getQuestionsWithRatings();
+    async getQuestionsWithRatings(@Res() res: Response) {
+      const questions = await this.ratingService.getQuestionsWithRatings();
+      if (questions.length === 0) {
+        return res.status(HttpStatus.NO_CONTENT).send();
+      }
+      return res.status(HttpStatus.OK).json(questions);
     }
 
     @Get('date-range')
-    getQuestionsWithRatingsByDate(@Query('start') start: string, @Query('end') end: string) {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        return this.ratingService.getQuestionsWithRatingsByDate(startDate, endDate);
+    async getQuestionsWithRatingsByDate(@Query('start') start: string, @Query('end') end: string, @Res() res: Response) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const questions = await this.ratingService.getQuestionsWithRatingsByDate(startDate, endDate);
+    if (questions.length === 0) {
+      return res.status(HttpStatus.NO_CONTENT).send();
     }
+    return res.status(HttpStatus.OK).json(questions);
+  }
 }

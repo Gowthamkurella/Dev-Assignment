@@ -13,12 +13,25 @@ const app_service_1 = require("./app.service");
 const question_module_1 = require("./question/question.module");
 const mongoose_1 = require("@nestjs/mongoose");
 const rating_module_1 = require("./rating/rating.module");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [mongoose_1.MongooseModule.forRoot('mongodb+srv://gowthamkurella12:JCdYrKFQqTrzRgPL@cluster0.vp3hntf.mongodb.net/QuestRate'), question_module_1.QuestionModule, rating_module_1.RatingModule],
+        imports: [
+            config_1.ConfigModule.forRoot({
+                isGlobal: true,
+                envFilePath: '.env',
+            }),
+            mongoose_1.MongooseModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: async (configService) => ({
+                    uri: configService.get('MONGODB_URI'),
+                }),
+                inject: [config_1.ConfigService],
+            }), question_module_1.QuestionModule, rating_module_1.RatingModule
+        ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
     })
