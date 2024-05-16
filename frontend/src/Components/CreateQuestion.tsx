@@ -285,7 +285,7 @@ const CreateQuestionPage: React.FC = () => {
                             fontFamily: "'Figtree', sans-serif",
                           }}
                         >
-                          {q.title}
+                          <div dangerouslySetInnerHTML={{ __html: q.title }} />
                         </Typography>
                       </Box>
                     </Paper>
