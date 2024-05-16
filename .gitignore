@@ -53,3 +53,7 @@ pids/
 
 # Miscellaneous
 .pnp.js
+
+# dotenv environment variables file
+backend/.env
+

@@ -2,10 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Question, QuestionDocument } from './schemas/question.schema';
+import { Response, ResponseDocument } from '../question/schemas/response.schema';
 
 @Injectable()
 export class QuestionService {
-  constructor(@InjectModel(Question.name) private questionModel: Model<QuestionDocument>) {}
+  constructor(@InjectModel(Question.name) private questionModel: Model<QuestionDocument>,
+  @InjectModel(Response.name) private responseModel: Model<ResponseDocument>) {}
 
   async create(title: string): Promise<Question> {
     const newQuestion = new this.questionModel({ title });
@@ -37,5 +39,6 @@ export class QuestionService {
     if (!result) {
       throw new NotFoundException(`Question with ID ${id} not found`);
     }
+    await this.responseModel.deleteMany({ questionId: id }).exec();
   }
 }
