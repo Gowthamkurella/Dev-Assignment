@@ -61,23 +61,12 @@ const CreateQuestionPage: React.FC = () => {
     setOpen(false);
   };
 
-  const stripHtmlTags = (html: string) => {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
   const handleCreateQuestion = async () => {
-    const strippedQuestion = stripHtmlTags(question);
-    if (!strippedQuestion.trim()) {
-      setError("Question cannot be empty");
-      return;
-    }
     setLoading(true);
     setError("");
     try {
       await axios.post("http://localhost:3000/questions", {
-        title: strippedQuestion,
+        title: question,
       });
       setQuestion("");
       setOpen(false);
