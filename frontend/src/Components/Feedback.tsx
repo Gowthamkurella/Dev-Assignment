@@ -7,6 +7,11 @@ import {
   CardContent,
   CardMedia,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Rating,
   Toolbar,
@@ -29,6 +34,7 @@ function Feedback() {
     formState: { errors },
   } = useForm();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [openPopup, setOpenPopup] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,11 +58,16 @@ function Feedback() {
       .post("http://localhost:3000/ratings/feedback", { rates: ratings })
       .then((response) => {
         console.log("Ratings submitted successfully:", response.data);
-        navigate("/response");
+        setOpenPopup(true);
       })
       .catch((error) => {
         console.error("Error submitting ratings:", error);
       });
+  };
+
+  const handleClosePopup = () => {
+    setOpenPopup(false);
+    navigate("/response");
   };
 
   return (
@@ -93,25 +104,33 @@ function Feedback() {
         >
           <Container maxWidth="md">
             <Card>
-              <CardMedia
-                component="img"
-                height="200"
-                image={`${process.env.PUBLIC_URL}/feedback.jpg`}
-                alt="Feedback"
-                sx={{ objectFit: "cover" }}
-              />
-              <CardContent>
+              <Box sx={{ position: "relative" }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={`${process.env.PUBLIC_URL}/feedback.jpg`}
+                  alt="Feedback"
+                  sx={{ objectFit: "cover" }}
+                />
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "black",
+                    position: "absolute",
+                    top: "80%",
+                    left: "20%",
+                    transform: "translate(-50%, -50%)",
+                    color: "white",
                     fontWeight: "bold",
                     textAlign: "center",
-                    mb: 2,
+
+                    padding: "5px 10px",
+                    borderRadius: "5px",
                   }}
                 >
                   Submit Your Feedback
                 </Typography>
+              </Box>
+              <CardContent>
                 {questions.map((question) => (
                   <Box key={question._id} sx={{ mb: 3 }}>
                     <Typography
@@ -153,6 +172,27 @@ function Feedback() {
           </Container>
         </Box>
       </form>
+
+      <Dialog
+        open={openPopup}
+        onClose={handleClosePopup}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Submission Successful"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Your feedback has been submitted successfully.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePopup} autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
