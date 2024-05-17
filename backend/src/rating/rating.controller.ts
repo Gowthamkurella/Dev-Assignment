@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Post,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { RateQuestionsDto } from './dto/rate-questions.dto';
 import { RatingService } from './rating.service';

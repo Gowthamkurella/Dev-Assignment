@@ -22,11 +22,13 @@ import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import { useNavigate } from 'react-router-dom';
 import "react-quill/dist/quill.snow.css";
+
 interface Question {
   id: number;
   title: string;
 }
 const CreateQuestionPage: React.FC = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -88,6 +90,7 @@ const CreateQuestionPage: React.FC = () => {
   const handleClick = () => {
     navigate("/feedback"); 
   };
+
 
   return (
     <Box
@@ -238,6 +241,9 @@ const CreateQuestionPage: React.FC = () => {
                     fontWeight: "bold",
                     padding: "12px 24px",
                   }}
+                  onClick={() => {
+                    navigate("/response");
+                  }}
                 >
                   View Responses
                 </Button>
@@ -248,7 +254,10 @@ const CreateQuestionPage: React.FC = () => {
                     fontWeight: "bold",
                     padding: "12px 24px",
                   }}
-                  onClick={handleClick}
+
+                  onClick={() => {
+                    navigate("/feedback");
+                  }}
                 >
                   View Form
                 </Button>
