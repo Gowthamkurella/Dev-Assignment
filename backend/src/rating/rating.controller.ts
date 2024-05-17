@@ -29,14 +29,15 @@ export class RatingController {
     return res.status(HttpStatus.OK).json(questions);
   }
 
-  @Get('date-range')
+  @Post('date-range')
   async getQuestionsWithRatingsByDate(
-    @Query('start') start: string,
-    @Query('end') end: string,
+    @Body('start') start: string,
+    @Body('end') end: string,
     @Res() res: Response,
   ) {
     const startDate = new Date(start);
     const endDate = new Date(end);
+    endDate.setHours(23, 59, 59, 999);
     const questions = await this.ratingService.getQuestionsWithRatingsByDate(
       startDate,
       endDate,
