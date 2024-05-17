@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60.89" height="60.891" viewBox="0 0 60.89 60.891">
+  <g id="Flat_Color" data-name="Flat Color" transform="translate(-3 -3)">
+    <path id="Path_15" data-name="Path 15" d="M44.124,3H22.766a4.684,4.684,0,0,0-3.372,1.382L4.382,19.393A4.684,4.684,0,0,0,3,22.766V44.124A4.684,4.684,0,0,0,4.382,47.5L19.393,62.507a4.684,4.684,0,0,0,3.3,1.382H44.053A4.684,4.684,0,0,0,47.5,62.507L62.507,47.5a4.684,4.684,0,0,0,1.382-3.372V22.766a4.684,4.684,0,0,0-1.382-3.372L47.5,4.382A4.684,4.684,0,0,0,44.124,3Z" transform="translate(0 0)" fill="#e63946"/>
+    <g id="Group_11" data-name="Group 11" transform="translate(26.641 12.368)">
+      <circle id="Ellipse_1" data-name="Ellipse 1" cx="4.5" cy="4.5" r="4.5" transform="translate(2.359 32.633)" fill="#edebea"/>
+      <path id="Path_16" data-name="Path 16" d="M22.474,30.419H17.322a2.342,2.342,0,0,1-2.342-2.108L13.107,9.576A2.342,2.342,0,0,1,15.449,7h8.9A2.342,2.342,0,0,1,26.69,9.576L24.816,28.311a2.342,2.342,0,0,1-2.342,2.108Z" transform="translate(-13.095 -7)" fill="#edebea"/>
+    </g>
+  </g>
+</svg>

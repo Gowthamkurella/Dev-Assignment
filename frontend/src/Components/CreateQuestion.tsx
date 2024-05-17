@@ -22,7 +22,6 @@ import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-// Define the type for the question objects
 interface Question {
   id: number;
   title: string;
@@ -62,23 +61,12 @@ const CreateQuestionPage: React.FC = () => {
     setOpen(false);
   };
 
-  const stripHtmlTags = (html: string) => {
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
   const handleCreateQuestion = async () => {
-    const strippedQuestion = stripHtmlTags(question);
-    if (!strippedQuestion.trim()) {
-      setError("Question cannot be empty");
-      return;
-    }
     setLoading(true);
     setError("");
     try {
       await axios.post("http://localhost:3000/questions", {
-        title: strippedQuestion,
+        title: question,
       });
       setQuestion("");
       setOpen(false);
@@ -297,7 +285,7 @@ const CreateQuestionPage: React.FC = () => {
                             fontFamily: "'Figtree', sans-serif",
                           }}
                         >
-                          {q.title}
+                          <div dangerouslySetInnerHTML={{ __html: q.title }} />
                         </Typography>
                       </Box>
                     </Paper>
