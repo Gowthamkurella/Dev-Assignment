@@ -21,6 +21,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { useNavigate } from "react-router-dom";
 
 interface Question {
   id: number;
@@ -28,6 +29,7 @@ interface Question {
 }
 
 const CreateQuestionPage: React.FC = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -79,9 +81,11 @@ const CreateQuestionPage: React.FC = () => {
     }
   };
 
-  const filteredQuestions = questions.filter((q) =>
-    q.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredQuestions = questions
+    ? questions.filter((q) =>
+        q.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <Box
@@ -232,6 +236,9 @@ const CreateQuestionPage: React.FC = () => {
                     fontWeight: "bold",
                     padding: "12px 24px",
                   }}
+                  onClick={() => {
+                    navigate("/response");
+                  }}
                 >
                   View Responses
                 </Button>
@@ -241,6 +248,9 @@ const CreateQuestionPage: React.FC = () => {
                     fontFamily: "'Figtree', sans-serif",
                     fontWeight: "bold",
                     padding: "12px 24px",
+                  }}
+                  onClick={() => {
+                    navigate("/feedback");
                   }}
                 >
                   View Form
