@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Avatar,
@@ -13,13 +14,44 @@ import {
   Typography,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
+import axios from "axios";
+import { useNavigate } from 'react-router-dom';
+
+interface Question {
+  _id: string;
+  title: string;
+}
 
 function Feedback() {
-  const { handleSubmit, control } = useForm();
+  const { handleSubmit, control, formState: { errors } } = useForm();
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const navigate = useNavigate();
 
-  const onSubmit = (formData) => {
-    console.log(formData, "data");
-  };
+  useEffect(() => {
+    axios.get<Question[]>("http://localhost:3000/questions")
+      .then(response => {
+        setQuestions(response.data);
+      })
+      .catch(error => {
+        console.error("Error fetching questions:", error);
+      });
+  }, []);
+
+  const onSubmit = (formData: Record<string, number>) => {
+    const ratings = questions.map(question => ({
+      questionId: question._id,
+      rating: formData[question._id]
+    }));
+
+    axios.post("http://localhost:3000/ratings/feedback", { rates: ratings })
+    .then(response => {
+      console.log("Ratings submitted successfully:", response.data);
+      navigate('/createquestions');
+    })
+    .catch(error => {
+      console.error("Error submitting ratings:", error);
+    });
+};
 
   return (
     <>
@@ -81,65 +113,24 @@ function Feedback() {
                   Submit Your Feedback
                 </Typography>
               </Box>
-              <CardContent>
-                <Typography variant="subtitle1">
-                  On a scale of 1 to 5, how satisfied are you with the
-                  cleanliness of our facilities?
-                </Typography>
-                <Controller
-                  name="rating"
-                  control={control}
-                  defaultValue={0}
-                  render={({ field }) => <Rating {...field} />}
-                />
-                <Divider sx={{ marginTop: "5px" }} />
-              </CardContent>
-              <CardContent>
-                <Typography variant="subtitle1">
-                  On a scale of 1 to 5, how satisfied are you with the
-                  cleanliness of How would you rate the quality of the product
-                  you recently purchased? (1 star = Poor, 5 stars = Excellent)
-                </Typography>
-                <Controller
-                  name="rating1"
-                  control={control}
-                  defaultValue={0}
-                  render={({ field }) => <Rating {...field} />}
-                />
-                <Divider sx={{ marginTop: "5px" }} />
-              </CardContent>
-              <CardContent>
-                <Typography variant="subtitle1">
-                  On a scale of 1 to 5, how satisfied are you with the
-                  cleanliness of How would you rate the quality of the product
-                  you recently purchased? (1 star = Poor, 5 stars = Excellent)
-                </Typography>
-                <Controller
-                  name="rating2"
-                  control={control}
-                  defaultValue={0}
-                  render={({ field }) => <Rating {...field} />}
-                />
-                <Divider sx={{ marginTop: "5px" }} />
-              </CardContent>
-
-              <CardContent>
-                <Typography variant="subtitle1">
-                  On a scale of 1 to 5, how satisfied are you with the
-                  cleanliness of How would you rate the quality of the product
-                  you recently purchased? (1 star = Poor, 5 stars = Excellent)
-                </Typography>
-                <Box style={{ display: "flex", alignItems: "center" }}>
+              {questions.map(question => (
+                <CardContent key={question._id}>
+                  <Typography variant="subtitle1">{question.title}</Typography>
                   <Controller
-                    name="rating3"
+                    name={question._id}
                     control={control}
-                    defaultValue={0}
-                    render={({ field }) => <Rating {...field} />}
+                    // defaultValue={0}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <div>
+                        <Rating {...field} />
+                        {errors[question._id] && <Typography variant="caption" color="error">This field is required</Typography>}
+                      </div>
+                    )}
                   />
-                </Box>
-                <Divider sx={{ marginTop: "5px" }} />
-              </CardContent>
-
+                  <Divider sx={{ marginTop: "5px" }} />
+                </CardContent>
+              ))}
               <CardContent>
                 <Button type="submit">Submit</Button>
               </CardContent>
