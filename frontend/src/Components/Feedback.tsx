@@ -21,12 +21,10 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-
 interface Question {
   _id: string;
   title: string;
 }
-
 function Feedback() {
   const {
     handleSubmit,
@@ -36,7 +34,6 @@ function Feedback() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [openPopup, setOpenPopup] = useState(false);
   const navigate = useNavigate();
-
   useEffect(() => {
     axios
       .get<Question[]>("http://localhost:3000/questions")
@@ -47,7 +44,6 @@ function Feedback() {
         console.error("Error fetching questions:", error);
       });
   }, []);
-
   const onSubmit = (formData: Record<string, number>) => {
     const ratings = questions.map((question) => ({
       questionId: question._id,
@@ -63,12 +59,10 @@ function Feedback() {
         console.error("Error submitting ratings:", error);
       });
   };
-
   const handleClosePopup = () => {
     setOpenPopup(false);
     navigate("/response");
   };
-
   return (
     <>
       <AppBar
@@ -121,7 +115,6 @@ function Feedback() {
                     color: "white",
                     fontWeight: "bold",
                     textAlign: "center",
-
                     padding: "5px 10px",
                     borderRadius: "5px",
                   }}
@@ -171,7 +164,6 @@ function Feedback() {
           </Container>
         </Box>
       </form>
-
       <Dialog
         open={openPopup}
         onClose={handleClosePopup}
@@ -195,5 +187,13 @@ function Feedback() {
     </>
   );
 }
-
 export default Feedback;
+
+
+
+
+
+
+
+
+
