@@ -49,7 +49,6 @@ function Feedback() {
   }, []);
 
   const onSubmit = (formData: Record<string, number>) => {
-    console.log(formData, "data");
     const ratings = questions.map((question) => ({
       questionId: question._id,
       rating: formData[question._id],
@@ -140,7 +139,7 @@ function Feedback() {
                         fontFamily: "'Figtree', sans-serif",
                       }}
                     >
-                      <div
+                      <Box
                         dangerouslySetInnerHTML={{ __html: question.title }}
                       />
                     </Typography>
