@@ -20,13 +20,12 @@ import {
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import ReactQuill from "react-quill";
+import { useNavigate } from 'react-router-dom';
 import "react-quill/dist/quill.snow.css";
-
 interface Question {
   id: number;
   title: string;
 }
-
 const CreateQuestionPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
@@ -34,12 +33,12 @@ const CreateQuestionPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     setQuestion("");
     fetchQuestions();
   }, []);
-
   const fetchQuestions = async () => {
     setLoading(true);
     try {
@@ -52,15 +51,18 @@ const CreateQuestionPage: React.FC = () => {
       setLoading(false);
     }
   };
-
   const handleClickOpen = () => {
     setOpen(true);
   };
-
   const handleClose = () => {
     setOpen(false);
   };
 
+  const stripHtmlTags = (html: string) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
   const handleCreateQuestion = async () => {
     setLoading(true);
     setError("");
@@ -79,9 +81,13 @@ const CreateQuestionPage: React.FC = () => {
     }
   };
 
-  const filteredQuestions = questions.filter((q) =>
-    q.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredQuestions = questions ? 
+  questions.filter((q) => q.title.toLowerCase().includes(searchQuery.toLowerCase())) :
+  [];
+
+  const handleClick = () => {
+    navigate("/feedback"); 
+  };
 
   return (
     <Box
@@ -242,6 +248,7 @@ const CreateQuestionPage: React.FC = () => {
                     fontWeight: "bold",
                     padding: "12px 24px",
                   }}
+                  onClick={handleClick}
                 >
                   View Form
                 </Button>
@@ -266,7 +273,7 @@ const CreateQuestionPage: React.FC = () => {
                     >
                       <Box
                         sx={{
-                          borderLeft: "4px solid #007bff",
+                          borderLeft: "4px solid #007BFF",
                           paddingLeft: 1,
                           paddingTop: 1,
                           paddingBottom: 1,
@@ -274,7 +281,7 @@ const CreateQuestionPage: React.FC = () => {
                       >
                         <Typography
                           variant="caption"
-                          sx={{ color: "#007bff", fontWeight: "bold" }}
+                          sx={{ color: "#007BFF", fontWeight: "bold" }}
                         >
                           #{q.id}
                         </Typography>
@@ -353,5 +360,4 @@ const CreateQuestionPage: React.FC = () => {
     </Box>
   );
 };
-
 export default CreateQuestionPage;
