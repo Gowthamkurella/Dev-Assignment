@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Avatar,
@@ -8,57 +7,68 @@ import {
   CardContent,
   CardMedia,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Divider,
   Rating,
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Controller, useForm } from "react-hook-form";
 import axios from "axios";
-import { useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 interface Question {
   _id: string;
   title: string;
 }
-
 function Feedback() {
-  const { handleSubmit, control, formState: { errors } } = useForm();
+  const {
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [openPopup, setOpenPopup] = useState(false);
   const navigate = useNavigate();
-
   useEffect(() => {
-    axios.get<Question[]>("http://localhost:3000/questions")
-      .then(response => {
+    axios
+      .get<Question[]>("http://localhost:3000/questions")
+      .then((response) => {
         setQuestions(response.data);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("Error fetching questions:", error);
       });
   }, []);
-
   const onSubmit = (formData: Record<string, number>) => {
-    const ratings = questions.map(question => ({
+    const ratings = questions.map((question) => ({
       questionId: question._id,
-      rating: formData[question._id]
+      rating: formData[question._id],
     }));
-
-    axios.post("http://localhost:3000/ratings/feedback", { rates: ratings })
-    .then(response => {
-      console.log("Ratings submitted successfully:", response.data);
-      navigate('/createquestions');
-    })
-    .catch(error => {
-      console.error("Error submitting ratings:", error);
-    });
-};
-
+    axios
+      .post("http://localhost:3000/ratings/feedback", { rates: ratings })
+      .then((response) => {
+        console.log("Ratings submitted successfully:", response.data);
+        setOpenPopup(true);
+      })
+      .catch((error) => {
+        console.error("Error submitting ratings:", error);
+      });
+  };
+  const handleClosePopup = () => {
+    setOpenPopup(false);
+    navigate("/response");
+  };
   return (
     <>
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: "#ffffff",
+          backgroundColor: "#FFFFFF",
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
         }}
       >
@@ -78,68 +88,103 @@ function Feedback() {
         <Box
           sx={{
             backgroundColor: "#E7FCFB",
-            height: "100vh",
+            minHeight: "100vh",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
+            paddingTop: "80px",
           }}
         >
           <Container maxWidth="md">
-            <Card sx={{ marginTop: "100px" }}>
-              <CardMedia
-                component="img"
-                height="200"
-                width="100"
-                image="feedback.jpg"
-                alt="Placeholder"
-                sx={{ objectFit: "cover" }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -150,
-                  left: -280,
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <Card>
+              <Box sx={{ position: "relative" }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={`${process.env.PUBLIC_URL}/feedback.jpg`}
+                  alt="Feedback"
+                  sx={{ objectFit: "cover" }}
+                />
                 <Typography
                   variant="h6"
-                  sx={{ color: "white", fontWeight: "bold" }}
+                  sx={{
+                    position: "absolute",
+                    top: "80%",
+                    left: "20%",
+                    transform: "translate(-50%, -50%)",
+                    color: "white",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    padding: "5px 10px",
+                    borderRadius: "5px",
+                  }}
                 >
                   Submit Your Feedback
                 </Typography>
               </Box>
-              {questions.map(question => (
-                <CardContent key={question._id}>
-                  <Typography variant="subtitle1">{question.title}</Typography>
-                  <Controller
-                    name={question._id}
-                    control={control}
-                    // defaultValue={0}
-                    rules={{ required: true }}
-                    render={({ field }) => (
-                      <div>
-                        <Rating {...field} />
-                        {errors[question._id] && <Typography variant="caption" color="error">This field is required</Typography>}
-                      </div>
-                    )}
-                  />
-                  <Divider sx={{ marginTop: "5px" }} />
-                </CardContent>
-              ))}
               <CardContent>
-                <Button type="submit">Submit</Button>
+                {questions.map((question) => (
+                  <Box key={question._id} sx={{ mb: 3 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: "bold",
+                        fontFamily: "'Figtree', sans-serif",
+                      }}
+                    >
+                      <Box
+                        dangerouslySetInnerHTML={{ __html: question.title }}
+                      />
+                    </Typography>
+                    <Controller
+                      name={question._id}
+                      control={control}
+                      rules={{ required: true }}
+                      render={({ field }) => (
+                        <Box>
+                          <Rating {...field} />
+                          {errors[question._id] && (
+                            <Typography variant="caption" color="error">
+                              This field is required
+                            </Typography>
+                          )}
+                        </Box>
+                      )}
+                    />
+                    <Divider sx={{ marginTop: "5px" }} />
+                  </Box>
+                ))}
+                <Box sx={{ display: "flex", justifyContent: "center" }}>
+                  <Button type="submit" variant="contained">
+                    Submit
+                  </Button>
+                </Box>
               </CardContent>
             </Card>
           </Container>
         </Box>
       </form>
+      <Dialog
+        open={openPopup}
+        onClose={handleClosePopup}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Submission Successful"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Your feedback has been submitted successfully.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePopup} autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
-
 export default Feedback;

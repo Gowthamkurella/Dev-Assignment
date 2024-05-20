@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Query,
+} from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { Response } from 'express';
 
@@ -9,6 +21,14 @@ export class QuestionController {
   @Post()
   create(@Body('title') title: string) {
     return this.questionService.create(title);
+  }
+
+  @Get('search')
+  async search(@Query('q') searchTerm: string) {
+    if (!searchTerm) {
+      return [];
+    }
+    return this.questionService.searchQuestions(searchTerm);
   }
 
   @Get()
@@ -32,7 +52,6 @@ export class QuestionController {
 
   @Delete(':id')
   delete(@Param('id') id: string) {
-    console.log("hello world");
     return this.questionService.delete(id);
   }
 }

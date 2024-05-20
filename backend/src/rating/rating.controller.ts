@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpStatus,
-  Post,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { RateQuestionsDto } from './dto/rate-questions.dto';
 import { RatingService } from './rating.service';
@@ -26,7 +18,7 @@ export class RatingController {
     if (questions.length === 0) {
       return res.status(HttpStatus.NO_CONTENT).send();
     }
-    return res.status(HttpStatus.OK).json(questions);
+    return res.status(HttpStatus.OK).json(questions[0]);
   }
 
   @Post('date-range')
@@ -42,9 +34,10 @@ export class RatingController {
       startDate,
       endDate,
     );
+
     if (questions.length === 0) {
       return res.status(HttpStatus.NO_CONTENT).send();
     }
-    return res.status(HttpStatus.OK).json(questions);
+    return res.status(HttpStatus.OK).json(questions[0]);
   }
 }
