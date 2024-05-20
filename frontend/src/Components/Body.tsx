@@ -17,7 +17,8 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import debounce from "lodash/debounce";
+import { useCallback, useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -34,7 +35,7 @@ const Body = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [query, setQuery] = useState("");
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null
   );
@@ -57,7 +58,6 @@ const Body = () => {
   ];
 
   useEffect(() => {
-    setQuestion("");
     fetchQuestions();
   }, []);
 
@@ -95,9 +95,7 @@ const Body = () => {
       if (editingQuestionId) {
         await axios.put(
           `http://localhost:3000/questions/${editingQuestionId}`,
-          {
-            title: trimmedQuestion,
-          }
+          { title: trimmedQuestion }
         );
       } else {
         await axios.post("http://localhost:3000/questions", {
@@ -140,7 +138,6 @@ const Body = () => {
 
   const handleDeleteConfirm = async () => {
     if (!questionToDelete) return;
-
     setLoading(true);
     setError("");
     try {
@@ -156,100 +153,157 @@ const Body = () => {
     }
   };
 
-  const filteredQuestions = Array.isArray(questions)
-    ? questions.filter((q) =>
-        q.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const fetchSearchResults = async (searchTerm) => {
+    if (!searchTerm) {
+      fetchQuestions();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/questions/search?q=${searchTerm}`
+      );
+      setQuestions(response.data);
+    } catch (error) {
+      console.error("Error fetching search results", error);
+      setError("Failed to fetch search results. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedFetchSearchResults = useCallback(
+    debounce(fetchSearchResults, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedFetchSearchResults(query);
+  }, [query, debouncedFetchSearchResults]);
 
   return (
     <>
-      {questions.length > 0 && (
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          position: "sticky",
+          top: "64px",
+          backgroundColor: "#E0F7FA",
+          zIndex: 1,
+          paddingY: "10px",
+        }}
+      >
         <Box
           sx={{
-            width: "100%",
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            position: "sticky",
-            top: "64px",
-            backgroundColor: "#E0F7FA",
-            zIndex: 1,
-            paddingY: "10px",
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            flexGrow: 1,
           }}
         >
-          <Box
+          <Typography
+            variant="body1"
             sx={{
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-start",
-              flexGrow: 1,
+              marginBottom: "10px",
+              fontWeight: "bold",
+              fontFamily: "'Figtree', sans-serif",
             }}
           >
-            <Typography
-              variant="body1"
-              sx={{
-                marginBottom: "10px",
-                fontWeight: "bold",
-                fontFamily: "'Figtree', sans-serif",
-              }}
-            >
-              Added Questions:
-            </Typography>
-            <TextField
-              variant="outlined"
-              placeholder="Search..."
-              sx={{ width: "330px" }}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              flexGrow: 1,
-            }}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              sx={{
-                marginRight: "10px",
-                fontFamily: "'Figtree', sans-serif",
-                fontWeight: "bold",
-                padding: "12px 24px",
-              }}
-              onClick={handleClickOpen}
-            >
-              Create Question
-            </Button>
-            <Button
-              variant="outlined"
-              sx={{
-                marginRight: "10px",
-                fontFamily: "'Figtree', sans-serif",
-                fontWeight: "bold",
-                padding: "12px 24px",
-              }}
-            >
-              View Responses
-            </Button>
-            <Button
-              variant="outlined"
-              sx={{
-                fontFamily: "'Figtree', sans-serif",
-                fontWeight: "bold",
-                padding: "12px 24px",
-              }}
-            >
-              View Form
-            </Button>
-          </Box>
+            Added Questions:
+          </Typography>
+          <TextField
+            variant="outlined"
+            placeholder="Search..."
+            sx={{ width: "330px" }}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
         </Box>
-      )}
-      {questions.length === 0 ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            flexGrow: 1,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              marginRight: "10px",
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: "bold",
+              padding: "12px 24px",
+            }}
+            onClick={handleClickOpen}
+          >
+            Create Question
+          </Button>
+          <Button
+            variant="outlined"
+            sx={{
+              marginRight: "10px",
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: "bold",
+              padding: "12px 24px",
+            }}
+          >
+            View Responses
+          </Button>
+          <Button
+            variant="outlined"
+            sx={{
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: "bold",
+              padding: "12px 24px",
+            }}
+          >
+            View Form
+          </Button>
+        </Box>
+      </Box>
+      {loading ? (
+        <CircularProgress />
+      ) : questions.length === 0 && query ? (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            flexGrow: 1,
+            height: "60vh",
+          }}
+        >
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: "bold",
+              marginTop: "20px",
+              fontFamily: "'Figtree', sans-serif",
+            }}
+          >
+            No matches found
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              marginTop: "10px",
+              color: "text.secondary",
+              fontWeight: "bold",
+              fontFamily: "'Figtree', sans-serif",
+            }}
+          >
+            Try adjusting your search criteria.
+          </Typography>
+        </Box>
+      ) : questions.length === 0 && !query ? (
         <Box
           sx={{
             display: "flex",
@@ -284,7 +338,7 @@ const Body = () => {
               fontFamily: "'Figtree', sans-serif",
             }}
           >
-            Tap on create question to add a new question
+            Add some questions to get started.
           </Typography>
           <Button
             variant="contained"
@@ -301,96 +355,90 @@ const Body = () => {
           </Button>
         </Box>
       ) : (
-        <>
-          {loading ? (
-            <CircularProgress />
-          ) : (
-            <List sx={{ width: "100%" }}>
-              {filteredQuestions.map((q, index) => (
-                <ListItem
-                  key={q._id}
-                  sx={{ padding: 0 }}
-                  onMouseEnter={() => setHoveredQuestionId(q._id)}
-                  onMouseLeave={() => setHoveredQuestionId(null)}
+        <List sx={{ width: "100%" }}>
+          {questions.map((q, index) => (
+            <ListItem
+              key={q._id}
+              sx={{ padding: 0 }}
+              onMouseEnter={() => setHoveredQuestionId(q._id)}
+              onMouseLeave={() => setHoveredQuestionId(null)}
+            >
+              <Paper
+                elevation={2}
+                sx={{
+                  padding: 2,
+                  margin: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "#fff",
+                  width: "auto",
+                  maxWidth: "100%",
+                  flexGrow: 1,
+                  borderLeft: `4px solid ${colors[index % colors.length]}`,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    flexGrow: 1,
+                    paddingLeft: 1,
+                    paddingTop: 1,
+                    paddingBottom: 1,
+                  }}
                 >
-                  <Paper
-                    elevation={2}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "blue", fontWeight: "bold" }}
+                    >
+                      #{q._id}
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: "bold",
+                        fontFamily: "'Figtree', sans-serif",
+                      }}
+                    >
+                      <div dangerouslySetInnerHTML={{ __html: q.title }} />
+                    </Typography>
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconButton
+                    edge="end"
+                    aria-label="edit"
+                    onClick={() => handleEditQuestion(q._id, q.title)}
                     sx={{
-                      padding: 2,
-                      margin: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      backgroundColor: "#fff",
-                      width: "auto",
-                      maxWidth: "100%",
-                      flexGrow: 1,
-                      borderLeft: `4px solid ${colors[index % colors.length]}`,
+                      visibility:
+                        hoveredQuestionId === q._id ? "visible" : "hidden",
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        flexGrow: 1,
-                        paddingLeft: 1,
-                        paddingTop: 1,
-                        paddingBottom: 1,
-                      }}
-                    >
-                      <Box>
-                        <Typography
-                          variant="caption"
-                          sx={{ color: "blue", fontWeight: "bold" }}
-                        >
-                          #{q._id}
-                        </Typography>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: "bold",
-                            fontFamily: "'Figtree', sans-serif",
-                          }}
-                        >
-                          <div dangerouslySetInnerHTML={{ __html: q.title }} />
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <IconButton
-                        edge="end"
-                        aria-label="edit"
-                        onClick={() => handleEditQuestion(q._id, q.title)}
-                        sx={{
-                          visibility:
-                            hoveredQuestionId === q._id ? "visible" : "hidden",
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={() => handleDeleteClick(q._id)}
-                        sx={{
-                          visibility:
-                            hoveredQuestionId === q._id ? "visible" : "hidden",
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </Paper>
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={() => handleDeleteClick(q._id)}
+                    sx={{
+                      visibility:
+                        hoveredQuestionId === q._id ? "visible" : "hidden",
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </Paper>
+            </ListItem>
+          ))}
+        </List>
       )}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle
@@ -428,7 +476,7 @@ const Body = () => {
           </Typography>
           <ReactQuill
             value={question}
-            onChange={(value) => setQuestion(value.trim())}
+            onChange={(value) => setQuestion(value)}
             style={{ height: "200px", marginBottom: "20px" }}
           />
           {error && (
