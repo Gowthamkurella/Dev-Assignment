@@ -18,7 +18,7 @@ export class RatingController {
     if (questions.length === 0) {
       return res.status(HttpStatus.NO_CONTENT).send();
     }
-    return res.status(HttpStatus.OK).json(questions);
+    return res.status(HttpStatus.OK).json(questions[0]);
   }
 
   @Post('date-range')
@@ -34,9 +34,10 @@ export class RatingController {
       startDate,
       endDate,
     );
+
     if (questions.length === 0) {
       return res.status(HttpStatus.NO_CONTENT).send();
     }
-    return res.status(HttpStatus.OK).json(questions);
+    return res.status(HttpStatus.OK).json(questions[0]);
   }
 }
