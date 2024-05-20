@@ -21,6 +21,7 @@ import debounce from "lodash/debounce";
 import { useCallback, useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { useNavigate } from "react-router-dom";
 
 interface Question {
   _id: string;
@@ -36,6 +37,7 @@ const Body = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null
   );
@@ -253,6 +255,7 @@ const Body = () => {
               fontWeight: "bold",
               padding: "12px 24px",
             }}
+            onClick={() => navigate("/responses")}
           >
             View Responses
           </Button>
@@ -263,6 +266,7 @@ const Body = () => {
               fontWeight: "bold",
               padding: "12px 24px",
             }}
+            onClick={() => navigate("/feedback")}
           >
             View Form
           </Button>

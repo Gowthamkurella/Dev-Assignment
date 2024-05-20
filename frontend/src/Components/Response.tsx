@@ -3,6 +3,7 @@ import {
   AppBar,
   Avatar,
   Box,
+  Button,
   Card,
   CardContent,
   CardMedia,
@@ -14,6 +15,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 interface Rating {
   question: string;
   avg_rating?: number;
@@ -24,17 +26,19 @@ function Response() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const navigate = useNavigate();
   useEffect(() => {
     fetchRatings();
   }, []);
   const fetchRatings = () => {
     axios
-      .get<Rating[]>("http://localhost:3000/ratings")
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          setRatings(response.data);
+      .get("http://localhost:3000/ratings")
+      .then(({ data }) => {
+        console.log();
+        if (Array.isArray(data.questionStats)) {
+          setRatings(data.questionStats);
         } else {
-          console.error("Unexpected response data:", response.data);
+          console.error("Unexpected response data:", data.questionStats);
           setRatings([]);
         }
       })
@@ -72,6 +76,7 @@ function Response() {
         console.error("Error submitting response:", error);
       });
   };
+  console.log(ratings);
   return (
     <>
       <AppBar
@@ -130,7 +135,7 @@ function Response() {
                 >
                   Average Rating:
                 </Typography>
-              </Stack>
+              </Box>
             </Box>
 
             <CardContent>
@@ -144,10 +149,10 @@ function Response() {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      style={{ marginRight: 10}}
+                      style={{ marginRight: 10 }}
                       required
                     />
-                    <Typography variant="subtitle2" sx={{ marginRight: 2}}>
+                    <Typography variant="subtitle2" sx={{ marginRight: 2 }}>
                       to
                     </Typography>
                     <input
