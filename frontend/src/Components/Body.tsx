@@ -19,7 +19,6 @@ import {
 import axios from "axios";
 import debounce from "lodash/debounce";
 import { useCallback, useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "react-query";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { useNavigate } from "react-router-dom";
@@ -32,11 +31,13 @@ interface Question {
 }
 
 const Body = () => {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null
   );
@@ -46,90 +47,35 @@ const Body = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
 
-  const fetchQuestions = async () => {
-    const response = await axios.get("http://localhost:3000/questions");
-    return response.data;
-  };
-
-  const fetchSearchResults = async (searchTerm: string) => {
-    if (!searchTerm) {
-      queryClient.invalidateQueries("questions");
-      return;
-    }
-
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/questions?q=${searchTerm}`
-      );
-      queryClient.setQueryData("questions", response.data);
-    } catch (error) {
-      console.error("Error fetching search results", error);
-    }
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const debouncedFetchSearchResults = useCallback(
-    debounce(fetchSearchResults, 300),
-    []
-  );
+  const colors = [
+    "#FF5733",
+    "#33FF57",
+    "#3357FF",
+    "#FF33A1",
+    "#FFC300",
+    "#FF5733",
+    "#C70039",
+    "#900C3F",
+    "#581845",
+  ];
 
   useEffect(() => {
-    debouncedFetchSearchResults(query);
-    // Cleanup debounce on unmount
-    return () => debouncedFetchSearchResults.cancel();
-  }, [query, debouncedFetchSearchResults]);
-  const createQuestion = async (newQuestion: { title: string }) => {
-    const response = await axios.post(
-      "http://localhost:3000/questions",
-      newQuestion
-    );
-    return response.data;
+    fetchQuestions();
+  }, []);
+
+  const fetchQuestions = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:3000/questions");
+      const data = Array.isArray(response.data) ? response.data : [];
+      setQuestions(data);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      setError("Failed to fetch questions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const updateQuestion = async ({
-    id,
-    updatedQuestion,
-  }: {
-    id: string;
-    updatedQuestion: { title: string };
-  }) => {
-    const response = await axios.put(
-      `http://localhost:3000/questions/${id}`,
-      updatedQuestion
-    );
-    return response.data;
-  };
-
-  const deleteQuestion = async (id: string) => {
-    const response = await axios.delete(
-      `http://localhost:3000/questions/${id}`
-    );
-    return response.data;
-  };
-
-  const {
-    data: questions,
-    isLoading,
-    error,
-  } = useQuery<Question[], Error>("questions", fetchQuestions);
-
-  const createMutation = useMutation(createQuestion, {
-    onSuccess: () => {
-      queryClient.invalidateQueries("questions");
-    },
-  });
-
-  const updateMutation = useMutation(updateQuestion, {
-    onSuccess: () => {
-      queryClient.invalidateQueries("questions");
-    },
-  });
-
-  const deleteMutation = useMutation(deleteQuestion, {
-    onSuccess: () => {
-      queryClient.invalidateQueries("questions");
-    },
-  });
 
   const handleClickOpen = () => {
     setEditingQuestionId(null);
@@ -143,17 +89,37 @@ const Body = () => {
     setEditingQuestionId(null);
   };
 
-  const handleCreateOrUpdateQuestion = () => {
+  const handleCreateOrUpdateQuestion = async () => {
+    setLoading(true);
+    setError("");
     const trimmedQuestion = question.trim();
-    if (editingQuestionId) {
-      updateMutation.mutate({
-        id: editingQuestionId,
-        updatedQuestion: { title: trimmedQuestion },
-      });
-    } else {
-      createMutation.mutate({ title: trimmedQuestion });
+    try {
+      if (editingQuestionId) {
+        await axios.put(
+          `http://localhost:3000/questions/${editingQuestionId}`,
+          { title: trimmedQuestion }
+        );
+      } else {
+        await axios.post("http://localhost:3000/questions", {
+          title: trimmedQuestion,
+        });
+      }
+      setQuestion("");
+      setOpen(false);
+      fetchQuestions();
+    } catch (error) {
+      console.error(
+        `Error ${editingQuestionId ? "updating" : "creating"} question:`,
+        error
+      );
+      setError(
+        `Failed to ${
+          editingQuestionId ? "update" : "create"
+        } question. Please try again.`
+      );
+    } finally {
+      setLoading(false);
     }
-    handleClose();
   };
 
   const handleEditQuestion = (id: string, title: string) => {
@@ -172,24 +138,52 @@ const Body = () => {
     setQuestionToDelete(null);
   };
 
-  const handleDeleteConfirm = () => {
-    if (questionToDelete) {
-      deleteMutation.mutate(questionToDelete);
+  const handleDeleteConfirm = async () => {
+    if (!questionToDelete) return;
+    setLoading(true);
+    setError("");
+    try {
+      await axios.delete(`http://localhost:3000/questions/${questionToDelete}`);
+      fetchQuestions();
+    } catch (error) {
+      console.error("Error deleting question:", error);
+      setError("Failed to delete question. Please try again.");
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setQuestionToDelete(null);
     }
-    handleDeleteCancel();
   };
 
-  const colors = [
-    "#FF5733",
-    "#33FF57",
-    "#3357FF",
-    "#FF33A1",
-    "#FFC300",
-    "#FF5733",
-    "#C70039",
-    "#900C3F",
-    "#581845",
-  ];
+  const fetchSearchResults = async (searchTerm) => {
+    if (!searchTerm) {
+      fetchQuestions();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/questions/search?q=${searchTerm}`
+      );
+      setQuestions(response.data);
+    } catch (error) {
+      console.error("Error fetching search results", error);
+      setError("Failed to fetch search results. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedFetchSearchResults = useCallback(
+    debounce(fetchSearchResults, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedFetchSearchResults(query);
+  }, [query, debouncedFetchSearchResults]);
 
   return (
     <>
@@ -230,10 +224,7 @@ const Body = () => {
             placeholder="Search..."
             sx={{ width: "330px" }}
             value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              debouncedFetchSearchResults(e.target.value);
-            }}
+            onChange={(e) => setQuery(e.target.value)}
           />
         </Box>
         <Box
@@ -264,9 +255,7 @@ const Body = () => {
               fontWeight: "bold",
               padding: "12px 24px",
             }}
-            onClick={() => {
-              navigate("/response");
-            }}
+            onClick={() => navigate("/responses")}
           >
             View Responses
           </Button>
@@ -277,19 +266,15 @@ const Body = () => {
               fontWeight: "bold",
               padding: "12px 24px",
             }}
-            onClick={() => {
-              navigate("/feedback");
-            }}
+            onClick={() => navigate("/feedback")}
           >
-            View Feedback
+            View Form
           </Button>
         </Box>
       </Box>
-      {isLoading ? (
+      {loading ? (
         <CircularProgress />
-      ) : error ? (
-        <Typography color="error">{(error as Error).message}</Typography>
-      ) : questions?.length === 0 && query ? (
+      ) : questions.length === 0 && query ? (
         <Box
           sx={{
             display: "flex",
@@ -322,7 +307,7 @@ const Body = () => {
             Try adjusting your search criteria.
           </Typography>
         </Box>
-      ) : questions?.length === 0 && !query ? (
+      ) : questions.length === 0 && !query ? (
         <Box
           sx={{
             display: "flex",
@@ -357,96 +342,107 @@ const Body = () => {
               fontFamily: "'Figtree', sans-serif",
             }}
           >
-            Click the "Create Question" button to add a new question.
+            Add some questions to get started.
           </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            sx={{
+              marginTop: "20px",
+              fontFamily: "'Figtree', sans-serif",
+              fontWeight: "bold",
+              padding: "12px 24px",
+            }}
+            onClick={handleClickOpen}
+          >
+            Create Question
+          </Button>
         </Box>
       ) : (
-        questions && (
-          <List sx={{ width: "100%" }}>
-            {questions.map((q, index) => (
-              <ListItem
-                key={q._id}
-                sx={{ padding: 0 }}
-                onMouseEnter={() => setHoveredQuestionId(q._id)}
-                onMouseLeave={() => setHoveredQuestionId(null)}
+        <List sx={{ width: "100%" }}>
+          {questions.map((q, index) => (
+            <ListItem
+              key={q._id}
+              sx={{ padding: 0 }}
+              onMouseEnter={() => setHoveredQuestionId(q._id)}
+              onMouseLeave={() => setHoveredQuestionId(null)}
+            >
+              <Paper
+                elevation={2}
+                sx={{
+                  padding: 2,
+                  margin: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: "#fff",
+                  width: "auto",
+                  maxWidth: "100%",
+                  flexGrow: 1,
+                  borderLeft: `4px solid ${colors[index % colors.length]}`,
+                }}
               >
-                <Paper
-                  elevation={2}
+                <Box
                   sx={{
-                    padding: 2,
-                    margin: 1,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    backgroundColor: "#fff",
-                    width: "auto",
-                    maxWidth: "100%",
+                    alignItems: "flex-start",
                     flexGrow: 1,
-                    borderLeft: `4px solid ${colors[index % colors.length]}`,
+                    paddingLeft: 1,
+                    paddingTop: 1,
+                    paddingBottom: 1,
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      flexGrow: 1,
-                      paddingLeft: 1,
-                      paddingTop: 1,
-                      paddingBottom: 1,
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "blue", fontWeight: "bold" }}
-                      >
-                        #{q._id}
-                      </Typography>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          fontWeight: "bold",
-                          fontFamily: "'Figtree', sans-serif",
-                        }}
-                      >
-                        <div dangerouslySetInnerHTML={{ __html: q.title }} />
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <IconButton
-                      edge="end"
-                      aria-label="edit"
-                      onClick={() => handleEditQuestion(q._id, q.title)}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "blue", fontWeight: "bold" }}
+                    >
+                      #{q._id}
+                    </Typography>
+                    <Typography
+                      variant="h6"
                       sx={{
-                        visibility:
-                          hoveredQuestionId === q._id ? "visible" : "hidden",
+                        fontWeight: "bold",
+                        fontFamily: "'Figtree', sans-serif",
                       }}
                     >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label="delete"
-                      onClick={() => handleDeleteClick(q._id)}
-                      sx={{
-                        visibility:
-                          hoveredQuestionId === q._id ? "visible" : "hidden",
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                      <div dangerouslySetInnerHTML={{ __html: q.title }} />
+                    </Typography>
                   </Box>
-                </Paper>
-              </ListItem>
-            ))}
-          </List>
-        )
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <IconButton
+                    edge="end"
+                    aria-label="edit"
+                    onClick={() => handleEditQuestion(q._id, q.title)}
+                    sx={{
+                      visibility:
+                        hoveredQuestionId === q._id ? "visible" : "hidden",
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    aria-label="delete"
+                    onClick={() => handleDeleteClick(q._id)}
+                    sx={{
+                      visibility:
+                        hoveredQuestionId === q._id ? "visible" : "hidden",
+                    }}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </Paper>
+            </ListItem>
+          ))}
+        </List>
       )}
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle
@@ -489,7 +485,7 @@ const Body = () => {
           />
           {error && (
             <Typography color="error" sx={{ marginBottom: 2 }}>
-              {(error as Error).message}
+              {error}
             </Typography>
           )}
           <Button
@@ -497,9 +493,9 @@ const Body = () => {
             color="primary"
             onClick={handleCreateOrUpdateQuestion}
             sx={{ marginTop: 5, fontWeight: "bold" }}
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading
+            {loading
               ? editingQuestionId
                 ? "Updating..."
                 : "Creating..."
