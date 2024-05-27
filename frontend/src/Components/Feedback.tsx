@@ -18,56 +18,60 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useMutation, useQuery } from "react-query";
 import { useNavigate } from "react-router-dom";
 
 interface Question {
   _id: string;
   title: string;
 }
-interface Question {
-  _id: string;
-  title: string;
-}
-function Feedback() {
+
+const Feedback = () => {
   const {
     handleSubmit,
     control,
     formState: { errors },
   } = useForm();
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [openPopup, setOpenPopup] = useState(false);
   const navigate = useNavigate();
-  useEffect(() => {
+
+  const {
+    data: questions = [],
+    isLoading,
+    isError,
+  } = useQuery<Question[]>("questions", () =>
     axios
       .get<Question[]>("http://localhost:3000/questions")
-      .then((response) => {
-        setQuestions(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching questions:", error);
-      });
-  }, []);
+      .then((res) => res.data)
+  );
+
+  const { mutate: submitFeedback, isLoading: isSubmitting } = useMutation(
+    (ratings: { questionId: string; rating: number }[]) =>
+      axios.post("http://localhost:3000/ratings/feedback", { rates: ratings }),
+    {
+      onSuccess: () => setOpenPopup(true),
+    }
+  );
+
+  const [openPopup, setOpenPopup] = useState(false);
+
   const onSubmit = (formData: Record<string, number>) => {
     const ratings = questions.map((question) => ({
       questionId: question._id,
       rating: formData[question._id],
     }));
-    axios
-      .post("http://localhost:3000/ratings/feedback", { rates: ratings })
-      .then((response) => {
-        console.log("Ratings submitted successfully:", response.data);
-        setOpenPopup(true);
-      })
-      .catch((error) => {
-        console.error("Error submitting ratings:", error);
-      });
+    submitFeedback(ratings);
   };
+
   const handleClosePopup = () => {
     setOpenPopup(false);
     navigate("/response");
   };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error fetching questions...</div>;
+
   return (
     <>
       <AppBar
@@ -136,11 +140,8 @@ function Feedback() {
                         fontWeight: "bold",
                         fontFamily: "'Figtree', sans-serif",
                       }}
-                    >
-                      <Box
-                        dangerouslySetInnerHTML={{ __html: question.title }}
-                      />
-                    </Typography>
+                      dangerouslySetInnerHTML={{ __html: question.title }}
+                    />
                     <Controller
                       name={question._id}
                       control={control}
@@ -160,8 +161,12 @@ function Feedback() {
                   </Box>
                 ))}
                 <Box sx={{ display: "flex", justifyContent: "center" }}>
-                  <Button type="submit" variant="contained">
-                    Submit
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit"}
                   </Button>
                 </Box>
               </CardContent>
@@ -184,12 +189,11 @@ function Feedback() {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClosePopup} autoFocus>
-            OK
-          </Button>
+          <Button onClick={handleClosePopup}>OK</Button>
         </DialogActions>
       </Dialog>
     </>
   );
-}
+};
+
 export default Feedback;

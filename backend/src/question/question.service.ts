@@ -1,7 +1,7 @@
 import {
   Injectable,
-  NotFoundException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -32,6 +32,18 @@ export class QuestionService {
       return await this.questionModel.find().exec();
     } catch (error) {
       throw new InternalServerErrorException('Failed to retrieve questions');
+    }
+  }
+
+  async searchQuestions(searchTerm: string): Promise<Question[]> {
+    try {
+      return await this.questionModel
+        .find({
+          title: { $regex: searchTerm, $options: 'i' },
+        })
+        .exec();
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to search questions');
     }
   }
 
@@ -79,18 +91,6 @@ export class QuestionService {
         throw error;
       }
       throw new InternalServerErrorException('Failed to delete question');
-    }
-  }
-
-  async searchQuestions(searchTerm: string): Promise<Question[]> {
-    try {
-      return await this.questionModel
-        .find({
-          title: { $regex: searchTerm, $options: 'i' },
-        })
-        .exec();
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to search questions');
     }
   }
 }
