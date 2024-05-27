@@ -3,86 +3,100 @@ import {
   AppBar,
   Avatar,
   Box,
-  Button,
   Card,
   CardContent,
   CardMedia,
   Container,
   Divider,
-  Rating,
   Toolbar,
   Typography,
 } from "@mui/material";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-interface Rating {
-  question: string;
-  avg_rating?: number;
+import { useMutation, useQuery } from "react-query";
+
+interface QuestionStats {
+  avg_rating: number;
   total_responses: number;
+  question: string;
 }
+
 function Response() {
-  const [ratings, setRatings] = useState<Rating[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [message, setMessage] = useState<string>("");
-  const navigate = useNavigate();
-  useEffect(() => {
-    fetchRatings();
-  }, []);
-  const fetchRatings = () => {
-    axios
-      .get("http://localhost:3000/ratings")
-      .then(({ data }) => {
-        console.log();
-        if (Array.isArray(data.questionStats)) {
-          setRatings(data.questionStats);
-        } else {
-          console.error("Unexpected response data:", data.questionStats);
-          setRatings([]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching ratings:", error);
-        setRatings([]);
-      });
-  };
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!startDate || !endDate) {
-      setMessage(" select both start and end dates.");
-      return;
+  const [questionStats, setQuestionStats] = useState<QuestionStats[]>([]);
+  const [totalAvgRating, setTotalAvgRating] = useState<number | null>(null);
+
+  const fetchQuestionStats = async () => {
+    try {
+      const response = await axios.get<{
+        _id: null;
+        questionStats: QuestionStats[];
+        total_avg_rating: number;
+      }>("http://localhost:3000/ratings");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching question stats:", error);
+      return { questionStats: [], total_avg_rating: null };
     }
-    axios
-      .post("http://localhost:3000/ratings/date-range", {
-        start: startDate,
-        end: endDate,
-      })
-      .then((response) => {
-        console.log("Response submitted successfully:", response);
-        if (Array.isArray(response.data)) {
-          setRatings(response.data);
-          if (response.data.length === 0) {
-            setMessage("No responses available ");
-          } else {
-            setMessage("");
-          }
-        } else {
-          console.error("Unexpected response data:", response.data);
-          setRatings([]);
-        }
-      })
-      .catch((error) => {
-        console.error("Error submitting response:", error);
-      });
   };
-  console.log(ratings);
+
+  const fetchDateRangeStats = async () => {
+    if (!startDate || !endDate) {
+      setMessage("Select both start and end dates.");
+      return { questionStats: [], total_avg_rating: null };
+    }
+    try {
+      const response = await axios.get(
+        `http://localhost:3000/ratings?start=${startDate}&end=${endDate}`
+      );
+      if (response.status === 204) {
+        setMessage("No responses available for the selected date range.");
+        return { questionStats: [], total_avg_rating: null };
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching date range stats:", error);
+      return { questionStats: [], total_avg_rating: null };
+    }
+  };
+
+  const { isError } = useQuery("questionStats", fetchQuestionStats, {
+    onSuccess: (data) => {
+      setQuestionStats(data.questionStats);
+      setTotalAvgRating(data.total_avg_rating);
+    },
+  });
+
+  const { mutate: submitDateRangeMutation } = useMutation(fetchDateRangeStats, {
+    onSuccess: (data) => {
+      setQuestionStats(data.questionStats);
+      setTotalAvgRating(data.total_avg_rating);
+      setMessage(
+        data.questionStats.length === 0 ? "No responses available" : ""
+      );
+    },
+  });
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      submitDateRangeMutation();
+    }
+  }, [startDate, endDate, submitDateRangeMutation]);
+
+  const handleDateChange =
+    (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setter(event.target.value);
+    };
+
   return (
     <>
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: "#ffffff",
+          backgroundColor: "#FFFFFF",
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
         }}
       >
@@ -101,10 +115,12 @@ function Response() {
       <Box
         sx={{
           backgroundColor: "#E7FCFB",
-          height: "100vh",
+          minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          paddingTop: "80px",
+          paddingBottom: "40px",
         }}
       >
         <Container maxWidth="md">
@@ -129,44 +145,37 @@ function Response() {
                 <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                   User Responses
                 </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ color: "white", fontWeight: "bold" }}
-                >
-                  Average Rating:
-                </Typography>
+                {totalAvgRating !== null && (
+                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                    Total Average Rating: {totalAvgRating?.toFixed(1)}
+                  </Typography>
+                )}
               </Box>
             </Box>
-
             <CardContent>
-              <form onSubmit={handleSubmit}>
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                    Select Date Range:
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  Select Date Range:
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={handleDateChange(setStartDate)}
+                    style={{ marginRight: 10 }}
+                    required
+                  />
+                  <Typography variant="subtitle2" sx={{ marginRight: 2 }}>
+                    to
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      style={{ marginRight: 10 }}
-                      required
-                    />
-                    <Typography variant="subtitle2" sx={{ marginRight: 2 }}>
-                      to
-                    </Typography>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      required
-                    />
-                  </Box>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={handleDateChange(setEndDate)}
+                    required
+                  />
                 </Box>
-                <Button type="submit" variant="contained">
-                  Submit
-                </Button>
-              </form>
+              </Box>
               {message && (
                 <Typography
                   variant="body2"
@@ -176,24 +185,26 @@ function Response() {
                   {message}
                 </Typography>
               )}
-              {Array.isArray(ratings) && ratings.length > 0 ? (
-                ratings.map((rating, index) => (
+              {isError && (
+                <Typography variant="body2" color="error" sx={{ marginTop: 2 }}>
+                  Error fetching question stats.
+                </Typography>
+              )}
+              {questionStats.length > 0 ? (
+                questionStats.map((stat, index) => (
                   <Box key={index} sx={{ mb: 3 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       <div
-                        dangerouslySetInnerHTML={{ __html: rating?.question }}
+                        dangerouslySetInnerHTML={{ __html: stat.question }}
                       />
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <StarIcon style={{ color: "gold" }} />
                       <Typography variant="subtitle2" sx={{ marginLeft: 1 }}>
-                        Responses: {rating?.total_responses}
+                        Responses: {stat.total_responses}
                       </Typography>
                       <Typography variant="subtitle2" sx={{ marginLeft: 3 }}>
-                        Average Rating:{" "}
-                        {rating?.avg_rating !== undefined
-                          ? rating?.avg_rating.toFixed(1)
-                          : "N/A"}
+                        Average Rating: {stat.avg_rating.toFixed(1)}
                       </Typography>
                     </Box>
                     <Divider sx={{ marginTop: "5px" }} />
